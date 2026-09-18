@@ -27,7 +27,7 @@
         }
 
         #top-bar {
-            width: 420px;
+            width: 380px;
             display: flex;
             justify-content: space-between;
             align-items: center;
@@ -57,14 +57,14 @@
             font-weight: bold;
             color: #333;
             margin-bottom: 8px;
-            width: 420px;
+            width: 380px;
             text-align: left;
         }
 
         #game-container {
             position: relative;
-            width: 420px;
-            height: 650px;
+            width: 380px;
+            height: 590px;
             background-color: #ffeaa7;
             border: 4px solid #d63031;
             border-radius: 8px;
@@ -204,8 +204,8 @@
         let isMusicPlaying = false;
 
         const container = document.getElementById('game-container');
-        const width = 420;
-        const height = 650;
+        const width = 380;
+        const height = 590;
         const DANGER_Y = 120;
         const GAME_OVER_DELAY = 2000; // 危险线以上持续 2 秒才结束
         const SPAWN_Y = 50;
@@ -340,7 +340,7 @@
             const gameOverEl = document.getElementById('game-over');
             gameOverEl.style.display = 'none';
             gameOverEl.classList.remove('win');
-            document.getElementById('game-over-text').innerText = '你未能合成峻峻！';
+            document.getElementById('game-over-text').innerText = '失敗！峻峻很傷心！';
 
             // 清除旧 canvas
             container.querySelectorAll('canvas').forEach(c => c.remove());

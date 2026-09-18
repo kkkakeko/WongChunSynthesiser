@@ -64,7 +64,7 @@
         #game-container {
             position: relative;
             width: 380px;
-            height: 590px;
+            height: 540px;
             background-color: #ffeaa7;
             border: 4px solid #d63031;
             border-radius: 8px;
@@ -74,7 +74,7 @@
 
         #danger-line {
             position: absolute;
-            top: 120px;
+            top: 90px;
             left: 0;
             width: 100%;
             height: 2px;
@@ -165,7 +165,7 @@
     <div id="game-container">
         <div id="danger-line"></div>
         <div id="game-over">
-            <h1 id="game-over-text">峻峻合成失敗！</h1>
+            <h1 id="game-over-text">失敗！峻峻很傷心！</h1>
             <button id="restart-btn" onclick="restartGame()">再試一次</button>
         </div>
     </div>
@@ -205,11 +205,12 @@
 
         const container = document.getElementById('game-container');
         const width = 380;
-        const height = 590;
-        const DANGER_Y = 120;
-        const GAME_OVER_DELAY = 2000; // 危险线以上持续 2 秒才结束
+        const height = 540;
+        const DANGER_Y = 90;
+        const GAME_OVER_DELAY = 2000;
         const SPAWN_Y = 50;
 
+        const LOSE_TEXT = '失敗！峻峻很傷心！';
         const WIN_TEXT = "恭喜你在沒有援手的情況下，成功自己動手合成出大峻峻。峻峻為你拍手！👏";
 
         function showToast(msg) {
@@ -240,14 +241,12 @@
             }
         }
 
-        // 將每張圖片裁剪成完美的正圓形，並統一輸出半徑*2 的方形 PNG
         function loadAndProcessImages(callback) {
             let loadedCount = 0;
             FRUITS = new Array(FRUITS_CONFIG.length);
 
             FRUITS_CONFIG.forEach((config, index) => {
                 const img = new Image();
-                // 只在 http/https 下設置 crossOrigin，兼容本地 file:// 雙擊打開
                 if (location.protocol.startsWith('http')) {
                     img.crossOrigin = "anonymous";
                 }
@@ -266,12 +265,10 @@
                     canvas.height = diameter;
                     const ctx = canvas.getContext('2d');
 
-                    // 正圆裁剪路径
                     ctx.beginPath();
                     ctx.arc(config.radius, config.radius, config.radius, 0, Math.PI * 2);
                     ctx.clip();
 
-                    // 居中裁切成正方形再缩放
                     let srcX = 0, srcY = 0, srcW = img.width, srcH = img.height;
                     if (img.width > img.height) {
                         srcW = img.height;
@@ -287,7 +284,6 @@
                     try {
                         dataUrl = canvas.toDataURL('image/png');
                     } catch (e) {
-                        // toDataURL 失败时，用纯色圆兜底
                         ctx.restore();
                         ctx.clearRect(0, 0, diameter, diameter);
                         ctx.fillStyle = '#ff7675';
@@ -306,7 +302,6 @@
                 };
 
                 img.onerror = () => {
-                    // 图片加载失败：纯色圆兜底
                     const canvas = document.createElement('canvas');
                     const diameter = config.radius * 2;
                     canvas.width = diameter;
@@ -340,12 +335,10 @@
             const gameOverEl = document.getElementById('game-over');
             gameOverEl.style.display = 'none';
             gameOverEl.classList.remove('win');
-            document.getElementById('game-over-text').innerText = '失敗！峻峻很傷心！';
+            document.getElementById('game-over-text').innerText = LOSE_TEXT;
 
-            // 清除旧 canvas
             container.querySelectorAll('canvas').forEach(c => c.remove());
 
-            // 如果之前有 engine，先解绑事件并停止
             if (engine) {
                 Events.off(engine);
                 if (render) Render.stop(render);
@@ -428,7 +421,6 @@
 
             dropped.isSensor = false;
             Body.setStatic(dropped, false);
-            // 给一个极小的向下速度，避免卡在顶部
             Body.setVelocity(dropped, { x: 0, y: 1 });
 
             setTimeout(() => {
@@ -456,7 +448,6 @@
             dropFruit();
         });
 
-        // 防止指针离开容器后卡住
         container.addEventListener('pointerleave', (e) => {
             if (isTouching && canDrop && currentFruit && !isGameOver) {
                 dropFruit();
@@ -479,7 +470,6 @@
                 ) {
                     const currentLevel = bodyA.plugin.level;
 
-                    // 已合成到最高级：直接触发胜利，不再合并
                     if (currentLevel >= FRUITS.length - 1) {
                         merged.add(bodyA.id);
                         merged.add(bodyB.id);
@@ -512,7 +502,6 @@
                         restitution: 0.2
                     });
 
-                    // 给一点微小速度，让它自然下沉，避免合成后卡住
                     Body.setVelocity(newFruit, {
                         x: (bodyA.velocity.x + bodyB.velocity.x) * 0.5,
                         y: (bodyA.velocity.y + bodyB.velocity.y) * 0.5 + 0.5
@@ -520,7 +509,6 @@
 
                     Composite.add(engine.world, newFruit);
 
-                    // 如果这次合成的正是最高级，直接胜利
                     if (nextLevel >= FRUITS.length - 1) {
                         triggerWin();
                     }
@@ -537,7 +525,6 @@
             for (let body of bodies) {
                 if (body.isStatic || body.isSensor) continue;
 
-                // 用总速度判断是否「真正静止」，阈值放宽到 1.0
                 const speed = Math.hypot(body.velocity.x, body.velocity.y);
                 if (body.bounds.min.y < DANGER_Y && speed < 1.0) {
                     isOverLine = true;
@@ -567,7 +554,7 @@
 
             const gameOverEl = document.getElementById('game-over');
             gameOverEl.classList.remove('win');
-            document.getElementById('game-over-text').innerText = '峻峻合成失敗！';
+            document.getElementById('game-over-text').innerText = LOSE_TEXT;
             gameOverEl.style.display = 'flex';
         }
 
@@ -595,7 +582,6 @@
             init();
         }
 
-        // 启动：先处理图片，再进入游戏
         loadAndProcessImages(() => {
             init();
         });

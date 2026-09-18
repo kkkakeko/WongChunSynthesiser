@@ -27,7 +27,7 @@
         }
 
         #top-bar {
-            width: 400px;
+            width: 420px;
             display: flex;
             justify-content: space-between;
             align-items: center;
@@ -57,14 +57,14 @@
             font-weight: bold;
             color: #333;
             margin-bottom: 8px;
-            width: 400px;
+            width: 420px;
             text-align: left;
         }
 
         #game-container {
             position: relative;
-            width: 400px;
-            height: 620px;
+            width: 420px;
+            height: 650px;
             background-color: #ffeaa7;
             border: 4px solid #d63031;
             border-radius: 8px;
@@ -74,7 +74,7 @@
 
         #danger-line {
             position: absolute;
-            top: 150px;
+            top: 120px;
             left: 0;
             width: 100%;
             height: 2px;
@@ -100,12 +100,20 @@
             justify-content: center;
             align-items: center;
             z-index: 20;
+            padding: 20px;
+            text-align: center;
         }
 
         #game-over h1 {
             font-size: 32px;
             margin-bottom: 20px;
             color: #ff7675;
+        }
+
+        #game-over.win h1 {
+            font-size: 22px;
+            line-height: 1.6;
+            color: #ffeaa7;
         }
 
         #restart-btn {
@@ -157,7 +165,7 @@
     <div id="game-container">
         <div id="danger-line"></div>
         <div id="game-over">
-            <h1>峻峻合成失敗！</h1>
+            <h1 id="game-over-text">峻峻合成失敗！</h1>
             <button id="restart-btn" onclick="restartGame()">再試一次</button>
         </div>
     </div>
@@ -196,11 +204,13 @@
         let isMusicPlaying = false;
 
         const container = document.getElementById('game-container');
-        const width = 400;
-        const height = 620;
-        const DANGER_Y = 150;
+        const width = 420;
+        const height = 650;
+        const DANGER_Y = 120;
         const GAME_OVER_DELAY = 2000; // 危险线以上持续 2 秒才结束
-        const SPAWN_Y = 70;           // 新水果生成高度
+        const SPAWN_Y = 50;
+
+        const WIN_TEXT = "恭喜你在沒有援手的情況下，成功自己動手合成出大峻峻。峻峻為你拍手！👏";
 
         function showToast(msg) {
             const toast = document.getElementById('toast');
@@ -327,7 +337,10 @@
             gameOverTimer = null;
 
             document.getElementById('score').innerText = score;
-            document.getElementById('game-over').style.display = 'none';
+            const gameOverEl = document.getElementById('game-over');
+            gameOverEl.style.display = 'none';
+            gameOverEl.classList.remove('win');
+            document.getElementById('game-over-text').innerText = '峻峻合成失敗！';
 
             // 清除旧 canvas
             container.querySelectorAll('canvas').forEach(c => c.remove());
@@ -466,7 +479,13 @@
                 ) {
                     const currentLevel = bodyA.plugin.level;
 
-                    if (currentLevel >= FRUITS.length - 1) return;
+                    // 已合成到最高级：直接触发胜利，不再合并
+                    if (currentLevel >= FRUITS.length - 1) {
+                        merged.add(bodyA.id);
+                        merged.add(bodyB.id);
+                        triggerWin();
+                        return;
+                    }
 
                     merged.add(bodyA.id);
                     merged.add(bodyB.id);
@@ -500,6 +519,11 @@
                     });
 
                     Composite.add(engine.world, newFruit);
+
+                    // 如果这次合成的正是最高级，直接胜利
+                    if (nextLevel >= FRUITS.length - 1) {
+                        triggerWin();
+                    }
                 }
             });
         }
@@ -536,8 +560,27 @@
         }
 
         function triggerGameOver() {
+            if (isGameOver) return;
             isGameOver = true;
-            document.getElementById('game-over').style.display = 'flex';
+            if (gameOverTimer) clearTimeout(gameOverTimer);
+            gameOverTimer = null;
+
+            const gameOverEl = document.getElementById('game-over');
+            gameOverEl.classList.remove('win');
+            document.getElementById('game-over-text').innerText = '峻峻合成失敗！';
+            gameOverEl.style.display = 'flex';
+        }
+
+        function triggerWin() {
+            if (isGameOver) return;
+            isGameOver = true;
+            if (gameOverTimer) clearTimeout(gameOverTimer);
+            gameOverTimer = null;
+
+            const gameOverEl = document.getElementById('game-over');
+            gameOverEl.classList.add('win');
+            document.getElementById('game-over-text').innerText = WIN_TEXT;
+            gameOverEl.style.display = 'flex';
         }
 
         function restartGame() {

@@ -27,7 +27,7 @@
         }
 
         #top-bar {
-            width: 360px;
+            width: 400px;
             display: flex;
             justify-content: space-between;
             align-items: center;
@@ -57,14 +57,14 @@
             font-weight: bold;
             color: #333;
             margin-bottom: 8px;
-            width: 360px;
+            width: 400px;
             text-align: left;
         }
 
         #game-container {
             position: relative;
-            width: 360px;
-            height: 560px;
+            width: 400px;
+            height: 620px;
             background-color: #ffeaa7;
             border: 4px solid #d63031;
             border-radius: 8px;
@@ -74,7 +74,7 @@
 
         #danger-line {
             position: absolute;
-            top: 120px;
+            top: 150px;
             left: 0;
             width: 100%;
             height: 2px;
@@ -196,10 +196,11 @@
         let isMusicPlaying = false;
 
         const container = document.getElementById('game-container');
-        const width = 360;
-        const height = 560;
-        const DANGER_Y = 120;
-        const GAME_OVER_DELAY = 1500; // 危险线以上持续 1.5 秒才结束
+        const width = 400;
+        const height = 620;
+        const DANGER_Y = 150;
+        const GAME_OVER_DELAY = 2000; // 危险线以上持续 2 秒才结束
+        const SPAWN_Y = 70;           // 新水果生成高度
 
         function showToast(msg) {
             const toast = document.getElementById('toast');
@@ -236,7 +237,10 @@
 
             FRUITS_CONFIG.forEach((config, index) => {
                 const img = new Image();
-                img.crossOrigin = "anonymous";
+                // 只在 http/https 下設置 crossOrigin，兼容本地 file:// 雙擊打開
+                if (location.protocol.startsWith('http')) {
+                    img.crossOrigin = "anonymous";
+                }
                 img.src = config.src;
 
                 const finalize = (fruit) => {
@@ -269,18 +273,11 @@
 
                     ctx.drawImage(img, srcX, srcY, srcW, srcH, 0, 0, diameter, diameter);
 
-                    // 白色边框，增加立体感
-                    //ctx.beginPath();
-                    //ctx.arc(config.radius, config.radius, config.radius - 2, 0, Math.PI * 2);
-                    //ctx.lineWidth = 3;
-                    //ctx.strokeStyle = '#ffffff';
-                    //ctx.stroke();
-
                     let dataUrl;
                     try {
                         dataUrl = canvas.toDataURL('image/png');
                     } catch (e) {
-                        // toDataURL 失败时，用纯色圆兜底（同源图片一般不会失败）
+                        // toDataURL 失败时，用纯色圆兜底
                         ctx.restore();
                         ctx.clearRect(0, 0, diameter, diameter);
                         ctx.fillStyle = '#ff7675';
@@ -380,7 +377,7 @@
             const fruitData = FRUITS[randomIndex];
             if (!fruitData) return;
 
-            currentFruit = Bodies.circle(width / 2, 50, fruitData.radius, {
+            currentFruit = Bodies.circle(width / 2, SPAWN_Y, fruitData.radius, {
                 isStatic: true,
                 isSensor: true,
                 render: {
@@ -405,7 +402,7 @@
             const radius = FRUITS[currentFruit.plugin.level].radius;
             x = Math.max(radius, Math.min(width - radius, x));
 
-            Body.setPosition(currentFruit, { x: x, y: 50 });
+            Body.setPosition(currentFruit, { x: x, y: SPAWN_Y });
         }
 
         function dropFruit() {
@@ -516,8 +513,9 @@
             for (let body of bodies) {
                 if (body.isStatic || body.isSensor) continue;
 
-                // 用 bounds.min.y 判断顶部是否越过危险线
-                if (body.bounds.min.y < DANGER_Y && Math.abs(body.velocity.y) < 0.5) {
+                // 用总速度判断是否「真正静止」，阈值放宽到 1.0
+                const speed = Math.hypot(body.velocity.x, body.velocity.y);
+                if (body.bounds.min.y < DANGER_Y && speed < 1.0) {
                     isOverLine = true;
                     break;
                 }
